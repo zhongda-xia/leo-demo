@@ -10,6 +10,10 @@
 
 # Running the demo
 
+First, run `demo.py` with Python 3.x:
+
+`python demo.py`
+
 `demo.py` simulates a Starlink-like constellation, and generates outputs for external uses:
 - generate a CZML file for visualization, which includes visualization of the routes between Beijing (consumer) and Sau Paulo (producer).
 - generate input files for ndnSIM to simulate the traffic between Beijing (consumer) and Sau Paulo (producer).
@@ -24,4 +28,4 @@ Then start the local server with:
 
 Visit `localhost:8080` to see the visualization demo.
 
-Click the "starlink" button on the top left to load the constellation. Loading could take a while, and some dragging around may be needed to update the view.
+Click the "starlink" button on the top left to load the constellation. Loading could take a while, progress bar not yet implemented.
