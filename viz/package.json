@@ -1,0 +1,24 @@
+{
+  "name": "lsn-viz",
+  "version": "1.0.0",
+  "description": "visualization of LEO satellite network, including geometry, topology, and routing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "webpack serve --host 0.0.0.0 --port 8080"
+  },
+  "author": "Zhongda Xia",
+  "license": "ISC",
+  "devDependencies": {
+    "cesium": "^1.79.1",
+    "copy-webpack-plugin": "^8.0.0",
+    "css-loader": "^5.1.1",
+    "html-webpack-plugin": "^5.2.0",
+    "style-loader": "^2.0.0",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.64.1",
+    "webpack-cli": "^4.5.0",
+    "webpack-dev-server": "^3.11.2"
+  }
+}

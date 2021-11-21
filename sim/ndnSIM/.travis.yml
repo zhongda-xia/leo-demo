@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+env:
+  global:
+    - WAF_JOBS=2
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      env:
+        - CXX=g++
+        - NODE_LABELS="Linux Ubuntu Ubuntu-16.04"
+    - os: osx
+      osx_image: xcode10.1
+      env:
+        - CXX=clang++
+        - xcode10.1
+        - NODE_LABELS="OSX OSX_VERSION=10.13"
+notifications:
+  email:
+    on_success: always
+    on_failure: always
+script:
+  - ./.jenkins

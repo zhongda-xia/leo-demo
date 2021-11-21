@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>LEO Satellite Network Visualization</title>
+    <style>
+      #toolbar {
+        margin: 5px;
+        padding: 2px 5px;
+        position: absolute;
+        top: 5px;
+        left: 5px;
+      }
+    </style>
+    <script>
+      window.czml = [];
+      <% for(var i=0; i < czml.length; i++) { %>
+        window.czml.push('<%= czml[i] %>');
+      <% } %>
+    </script>
+  </head>
+  <body>
+    <div id="cesiumContainer"></div>
+    <div id="toolbar"></div>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+top = '../..'
+
+def build(bld):
+
+    bld.objects(
+        target='kite-common-objects',
+        source=bld.path.ant_glob('common/*.cpp'),
+        use='core-objects')
+
+    bld.objects(
+        target='kite-rv-objects',
+        source=bld.path.ant_glob('rv/*.cpp', excl='rv/main.cpp'),
+        use='core-objects kite-common-objects')
+
+    bld.program(
+        target='../../bin/kiterv',
+        name='kiterv',
+        source='rv/main.cpp',
+        use='kite-rv-objects')
+
+    bld.objects(
+        target='kite-producer-objects',
+        source=bld.path.ant_glob('producer/*.cpp', excl='producer/main.cpp'),
+        use='core-objects kite-common-objects')
+
+    bld.program(
+        target='../../bin/kiteproducer',
+        name='kiteproducer',
+        source='producer/main.cpp',
+        use='kite-producer-objects')
+
+    ## (for unit tests)
+
+    bld(target='kite-objects',
+        use='kite-rv-objects kite-producer-objects')
