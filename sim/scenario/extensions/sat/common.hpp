@@ -65,7 +65,6 @@ struct station {
   }
 };
 
-extern uint64_t timeTillBreak;
 extern bool sameOrbit;
 struct UpdateParams {
     int interval;
@@ -80,7 +79,7 @@ vector<string>
 split(string s, string delimiter);
 
 void
-ShowOverlayCount(string path);
+ShowShimOverhead(string path);
 
 shared_ptr<::nfd::face::Face>
 SatPointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn, Ptr<NetDevice> device);

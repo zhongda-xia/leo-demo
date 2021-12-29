@@ -20,7 +20,7 @@
 #include "user-link-transport.hpp"
 
 #include "tlv.hpp"
-#include "overlay-manager.hpp"
+#include "handover-manager.hpp"
 
 #include "ns3/ndnSIM/helper/ndn-stack-helper.hpp"
 #include "ns3/ndnSIM/model/ndn-block-header.hpp"
@@ -38,9 +38,9 @@ namespace ns3 {
 namespace ndn {
 namespace sat {
 
-class OverlayManager;
+class HandoverManager;
 
-bool UserLinkTransport::m_doOverlay = false;
+bool UserLinkTransport::m_doShim = false;
 
 UserLinkTransport::UserLinkTransport(Ptr<Node> node,
                                      const Ptr<NetDevice>& netDevice,
@@ -99,13 +99,13 @@ UserLinkTransport::doSend(Packet&& packet)
   NS_LOG_DEBUG("Sending packet from netDevice with URI " << this->getLocalUri());
 
   if (m_isGone) {
-    if (m_doOverlay) {
+    if (m_doShim) {
       NS_LOG_DEBUG("Tunnelling packet from face whose netDevice URI is " << this->getLocalUri());
       // m_id is the identifier of the user link (which should also be the tunnel ID), and associated with the corresponding face (stored in the transport)
-      m_node->GetObject<OverlayManager>()->TunnelPacket(packet, m_id);
+      m_node->GetObject<HandoverManager>()->TunnelPacket(packet, m_id);
     }
     else {
-      NS_LOG_DEBUG("Link broken, overlay disabled, discard packet");
+      NS_LOG_DEBUG("Link broken, discard packet because shim layer mechanisms are disabled");
     }
     return;
   }
@@ -140,12 +140,12 @@ UserLinkTransport::receiveFromNetDevice(Ptr<NetDevice> device,
   auto nfdPacket = Packet(std::move(header.getBlock()));
 
   if (nfdPacket.packet.type() == tlv::AdaptationPacket) {
-    if (m_doOverlay) {
+    if (m_doShim) {
       NS_LOG_DEBUG("Received adaptation layer packet");
-      m_node->GetObject<OverlayManager>()->ProcessPacket(nfdPacket, device); // device is lasthop
+      m_node->GetObject<HandoverManager>()->ProcessPacket(nfdPacket, device); // device is lasthop
     }
     else {
-      NS_LOG_DEBUG("Adaptation layer packet received, but overlay is disabled");
+      NS_LOG_DEBUG("Adaptation layer packet received, but shim layer mechanisms are disabled");
     }
   }
   else {

@@ -18,7 +18,7 @@
 
 #include "sat/common.hpp"
 #include "sat/global-routing-helper.hpp"
-#include "sat/overlay-manager.hpp"
+#include "sat/handover-manager.hpp"
 #include "sat/user-link-transport.hpp"
 #include "sat/app-delay-tracer.hpp"
 #include "sat/l3-traffic-tracer.hpp"
@@ -41,45 +41,34 @@ main(int argc, char* argv[])
 
   uint32_t run = 1;
   cmd.AddValue("run", "Random seed", run);
-
   int stopTime = 100;
-  cmd.AddValue("stop", "Simulation duration (min)", stopTime);
-
+  cmd.AddValue("stop", "Simulation duration (minutes)", stopTime);
   string resPrefix = "default-";
   cmd.AddValue("resPrefix", "Prefix for result files", resPrefix);
 
   // NDN params
   string strategy = "multicast";
   cmd.AddValue("strategy", "The forwarding strategy to use", strategy);
-
   string consumerCbrFreq = "1.0";
   cmd.AddValue("consumerCbrFreq", "Interest sending frequency for CBR consumer", consumerCbrFreq);
-
   string interestLifetime = "2s";
   cmd.AddValue("interestLifetime", "Lifetime of consumer Interest, string representation", interestLifetime);
 
   // sat params
   int updateInterval = 1;
-  cmd.AddValue("updateInterval", "The interval (min) between link change checks", updateInterval);
-
-  uint64_t timeTillBreak = 100;
-  cmd.AddValue("timeTillBreak", "The interval (ms) between the initial Interest transmission and user link breakage", timeTillBreak);
-
+  cmd.AddValue("updateInterval", "The interval (minute) between link change checks", updateInterval);
   uint64_t period = 1000;
-  cmd.AddValue("period", "The period (ms) before and after handover during which consumer runs", period);
-
+  cmd.AddValue("period", "The period (millisecond) before and after handover during which consumer is active", period);
   string dataDir = ".";
   cmd.AddValue("dataDir", "Path to data files including setup configuration and traces", dataDir);
-
   string consumerCity = "Shanghai";
-  cmd.AddValue("consumerCity", "c", consumerCity);
-
+  cmd.AddValue("consumerCity", "consumer city", consumerCity);
   string producerCity = "Delhi";
-  cmd.AddValue("producerCity", "p", producerCity);
+  cmd.AddValue("producerCity", "producer city", producerCity);
 
   // link service params
-  bool doOverlay = false;
-  cmd.AddValue("doOverlay", "enable overlay", doOverlay);
+  bool doShim = false;
+  cmd.AddValue("doShim", "enable DRLS", doShim);
   uint64_t hopLimit = 2;
   cmd.AddValue("hopLimit", "hop limit", hopLimit);
 
@@ -89,11 +78,12 @@ main(int argc, char* argv[])
     return -1;
   }
 
+  NS_LOG_DEBUG("Consumer: " << consumerCity << ", producer: " << producerCity);
+
   Config::SetGlobal("RngRun", UintegerValue(run));
 
-  ndn::sat::UserLinkTransport::m_doOverlay = doOverlay;
-  ndn::sat::OverlayManager::m_hopLimit = hopLimit;
-  ndn::sat::timeTillBreak = timeTillBreak;
+  ndn::sat::UserLinkTransport::m_doShim = doShim;
+  ndn::sat::HandoverManager::m_hopLimit = hopLimit;
 
   ndn::ShowProgress(updateInterval*60, std::chrono::system_clock::now());
 
@@ -155,13 +145,13 @@ main(int argc, char* argv[])
 
   NS_LOG_INFO("Installed NDN protocol stack");
 
-  ObjectFactory overlayFactory;
-  overlayFactory.SetTypeId("ns3::ndn::sat::OverlayManager");
+  ObjectFactory handoverManagerFactory;
+  handoverManagerFactory.SetTypeId("ns3::ndn::sat::HandoverManager");
   for (NodeList::Iterator node = NodeList::Begin(); node != NodeList::End(); node++) {
-    (*node)->AggregateObject(overlayFactory.Create<ndn::sat::OverlayManager>());
+    (*node)->AggregateObject(handoverManagerFactory.Create<ndn::sat::HandoverManager>());
   }
 
-  NS_LOG_INFO("Installed Overlay Manager");
+  NS_LOG_INFO("Installed Handover Manager");
 
   string topPrefix = "/sat";
 
@@ -173,7 +163,7 @@ main(int argc, char* argv[])
 
   // set up roles
 
-  // for consumer mobility scenario, immobile producers at one place, and multiple mobile consumers at other places
+  // for consumer mobility scenario, currently simulates one pair of consumer and producer
   vector<pair<string, string>> stationPairs;
   {
     stationPairs.push_back(make_pair("city-"+consumerCity, "city-"+producerCity)); // consumer, producer
@@ -214,6 +204,7 @@ main(int argc, char* argv[])
   // read producer routes
   map<string, vector<pair<int, map<string, vector<pair<string, string>>>>>> producerRoutes;
   for (const auto& producerName : producerNames) {
+    continue;
     auto& station = stations[producerName];
     BOOST_ASSERT(station.isHost);
     BOOST_ASSERT(station.role == "producer");
@@ -304,7 +295,7 @@ main(int argc, char* argv[])
   params.period = period;
   ndn::sat::Update(params, &satellites, &stations, &routes, &producerRoutes);
 
-  Simulator::Schedule(Seconds(stopTime*60-1), &ndn::sat::ShowOverlayCount, resPrefix+"overlay-count.txt");
+  Simulator::Schedule(Seconds(stopTime*60-1), &ndn::sat::ShowShimOverhead, resPrefix+"overhead-count.txt");
 
   ndn::sat::L3TrafficTracer::InstallAll(resPrefix+"l3-traffic-trace.txt");
 

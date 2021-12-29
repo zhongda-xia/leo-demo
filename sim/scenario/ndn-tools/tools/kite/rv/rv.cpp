@@ -98,7 +98,7 @@ Rv::processKiteRequest(const Interest& interest)
   try {
     req = make_shared<Request>(interest);
   }
-  catch (std::invalid_argument e) {
+  catch (std::invalid_argument& e) {
     NDN_LOG_ERROR("Invalid KITE request: " << interest.getName());
     return;
   }

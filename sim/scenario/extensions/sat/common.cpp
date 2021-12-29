@@ -22,7 +22,7 @@
 #include "../kite/apps/producer/producer-app.hpp"
 
 #include "user-link-transport.hpp"
-#include "overlay-manager.hpp"
+#include "handover-manager.hpp"
 #include "apps/consumer/consumer.hpp"
 #include "apps/consumer/consumer-cbr.hpp"
 
@@ -60,11 +60,9 @@ void
 UpdateRoutes(vector<string> prefixes, map<string, vector<pair<string, string>>>& routes, map<string, satellite>& satellites);
 
 void
-OverlayResend(Ptr<Node> stationNode, string tunnelId);
+ShimResend(Ptr<Node> stationNode, string tunnelId);
 
 // public
-
-uint64_t timeTillBreak = 100;
 
 map<string, vector<string>>
 readCsv(string filename)
@@ -122,7 +120,7 @@ split(string s, string delimiter) {
 }
 
 void
-ShowOverlayCount(string path)
+ShowShimOverhead(string path)
 {
   std::ofstream os;
   os.open(path.c_str(), std::ios_base::out | std::ios_base::trunc);
@@ -133,8 +131,8 @@ ShowOverlayCount(string path)
 
   os << "Node\tInReq\tOutReq\tInAck\tOutAck\tInPayload\tOutPayload\n";
   for (NodeList::Iterator node = NodeList::Begin(); node != NodeList::End(); node++) {
-    auto overlayManager = (*node)->GetObject<OverlayManager>();
-    os << Names::FindName(*node) << "\t" << overlayManager->m_inReqs << "\t" << overlayManager->m_outReqs << "\t" << overlayManager->m_inAcks << "\t" << overlayManager->m_outAcks << "\t" << overlayManager->m_inPayloads << "\t" << overlayManager->m_outPayloads << "\n";
+    auto handoverManager = (*node)->GetObject<HandoverManager>();
+    os << Names::FindName(*node) << "\t" << handoverManager->m_inReqs << "\t" << handoverManager->m_outReqs << "\t" << handoverManager->m_inAcks << "\t" << handoverManager->m_outAcks << "\t" << handoverManager->m_inPayloads << "\t" << handoverManager->m_outPayloads << "\n";
   }
   os.close();
 }
@@ -266,34 +264,34 @@ Update(UpdateParams params, map<string, satellite>* pSatellites, map<string, sta
       auto stFace = station.node->GetObject<L3Protocol>()->getFaceByNetDevice(station.p2pDevice);
       ((UserLinkTransport*)(stFace->getTransport()))->m_isUserLink = true;
       ((UserLinkTransport*)(stFace->getTransport()))->m_id = userLinkId;
-      station.node->GetObject<OverlayManager>()->AddUserLink(userLinkId, stFace->getId());
+      station.node->GetObject<HandoverManager>()->AddUserLink(userLinkId, stFace->getId());
 
       NS_LOG_INFO("Set user link ID to " << userLinkId << ", for " << sat.name);
       auto satFace = sat.node->GetObject<L3Protocol>()->getFaceByNetDevice(sat.p2pDevice);
       ((UserLinkTransport*)(sat.node->GetObject<L3Protocol>()->getFaceByNetDevice(sat.p2pDevice)->getTransport()))->m_isUserLink = true;
       ((UserLinkTransport*)(sat.node->GetObject<L3Protocol>()->getFaceByNetDevice(sat.p2pDevice)->getTransport()))->m_id = userLinkId;
-      sat.node->GetObject<OverlayManager>()->AddUserLink(userLinkId, satFace->getId());
+      sat.node->GetObject<HandoverManager>()->AddUserLink(userLinkId, satFace->getId());
 
       // attach prefix to access satellite by adding route to station
       AttachPrefix(sat, station);
 
-      // send t-req if overlay enabled and attachment changes
+      // send t-req if shim layer mechanisms are enabled and attachment changes
       if (oldId == "") {
         NS_LOG_INFO("No previous attachment, do not send req");
       }
       else if (station.role == "consumer" || station.role == "m_producer") {
-        NS_LOG_INFO("Mobile consumer or producer, send T-Req if overlay is enabled");
-        if (UserLinkTransport::m_doOverlay) {
+        NS_LOG_INFO("Mobile consumer or producer, send T-Req if shim layer mechanisms are enabled");
+        if (UserLinkTransport::m_doShim) {
           NS_LOG_INFO("Broadcast req for " << oldId);
-          station.node->GetObject<OverlayManager>()->BroadcastReq(oldId, 0, nullptr);
+          station.node->GetObject<HandoverManager>()->BroadcastReq(oldId, 0, nullptr);
           if (station.role == "consumer") {
             NS_LOG_INFO("Mobile consumer, schedule resend after T-Req timeout");
             // schedule retransmit upon anticipation of failure (ISL delay uniformly set to 10ms), add 5ms for what?
-            Simulator::Schedule (MilliSeconds (OverlayManager::m_hopLimit*10*2+5), &OverlayResend, station.node, oldId);
+            Simulator::Schedule (MilliSeconds (HandoverManager::m_hopLimit*10*2+5), &ShimResend, station.node, oldId);
           }
         }
         else {
-          NS_LOG_INFO("Overlay disabled, do not send req");
+          NS_LOG_INFO("Shim layer mechanisms disabled, do not send req");
         }
       }
 
@@ -452,7 +450,6 @@ Update(UpdateParams params, map<string, satellite>* pSatellites, map<string, sta
       NS_LOG_INFO("Handover will happen for " << station.name << ", from " << lastSatName << " to " << curSatName);
       if ((curSatName != "-") && (lastSatName != "-")) {
         if (station.role == "consumer") {
-          // Simulator::Schedule (MilliSeconds (interval*60*1000-timeTillBreak), &Consumer::SendNewInterest, (Consumer *)&(*(station.node->GetApplication(0))));
           Simulator::Schedule (MilliSeconds (interval*60*1000-params.period), &ConsumerCbr::Resume, (ConsumerCbr *)&(*(station.node->GetApplication(0))));
           Simulator::Schedule (MilliSeconds (interval*60*1000+params.period), &ConsumerCbr::Pause, (ConsumerCbr *)&(*(station.node->GetApplication(0))));
 
@@ -462,10 +459,7 @@ Update(UpdateParams params, map<string, satellite>* pSatellites, map<string, sta
           strategy.m_lastSatPrefix = Name(satellites[lastSatName].satPrefix);
         }
         else if (station.role == "m_producer") {
-          for (auto app : station.consumerApps) {
-            // Simulator::Schedule (MilliSeconds (interval*60*1000-timeTillBreak), &Consumer::SendNewInterest, (Consumer *)&(*app));
-          }
-          // also schedule a KITE update immediately to allow the scheduled consumer Interest to reach the previous access satellite
+          // schedule a KITE update immediately to allow the scheduled consumer Interest to reach the previous access satellite
           ::ns3::ndn::kite::Producer* producerApp =
             dynamic_cast<::ns3::ndn::kite::Producer*>(&(*(station.node)->GetApplication(0)));
           Simulator::Schedule (Seconds (0.001), &::ns3::ndn::kite::Producer::OnAssociation, producerApp);
@@ -590,10 +584,10 @@ UpdateRoutes(vector<string> prefixes, map<string, vector<pair<string, string>>>&
 }
 
 void
-OverlayResend(Ptr<Node> stationNode, string tunnelId)
+ShimResend(Ptr<Node> stationNode, string tunnelId)
 {
-  auto overlayManager = stationNode->GetObject<OverlayManager>();
-  if(!overlayManager->isInTib(tunnelId)) {
+  auto handoverManager = stationNode->GetObject<HandoverManager>();
+  if(!handoverManager->isInTib(tunnelId)) {
     NS_LOG_INFO("Tunnel not established after timeout, resend Interest");
     // let forwarder resend all pending Interests
   }

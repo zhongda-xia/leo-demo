@@ -19,7 +19,7 @@
 
 #include "l3-traffic-tracer.hpp"
 
-#include "overlay-manager.hpp"
+#include "handover-manager.hpp"
 
 #include "ns3/node.h"
 #include "ns3/packet.h"
@@ -174,7 +174,7 @@ L3TrafficTracer::L3TrafficTracer(shared_ptr<std::ostream> os, Ptr<Node> node)
   : L3Tracer(node)
   , m_os(os)
 {
-  Ptr<::ns3::ndn::sat::OverlayManager> om = m_nodePtr->GetObject<::ns3::ndn::sat::OverlayManager>();
+  Ptr<::ns3::ndn::sat::HandoverManager> om = m_nodePtr->GetObject<::ns3::ndn::sat::HandoverManager>();
   if (om != nullptr) {
     om->TraceConnectWithoutContext("ForwardPayloads", MakeCallback(&L3TrafficTracer::ForwardPayloads, this));
   }
@@ -184,7 +184,7 @@ L3TrafficTracer::L3TrafficTracer(shared_ptr<std::ostream> os, const std::string&
   : L3Tracer(node)
   , m_os(os)
 {
-  Ptr<::ns3::ndn::sat::OverlayManager> om = m_nodePtr->GetObject<::ns3::ndn::sat::OverlayManager>();
+  Ptr<::ns3::ndn::sat::HandoverManager> om = m_nodePtr->GetObject<::ns3::ndn::sat::HandoverManager>();
   if (om != nullptr) {
     om->TraceConnectWithoutContext("ForwardPayloads", MakeCallback(&L3TrafficTracer::ForwardPayloads, this));
   }

@@ -39,7 +39,7 @@ typedef vector<string> IdList;
 
 typedef map<string, vector<::nfd::face::Transport::Packet>> DataTable;
 
-class OverlayManager : public Object {
+class HandoverManager : public Object {
 public:
   static uint64_t m_hopLimit; // global hop limit
 
@@ -54,7 +54,7 @@ public:
   /**
    * @brief Default constructor
    */
-  OverlayManager();
+  HandoverManager();
 
   /**
    * @brief Helper function to get smart pointer to ndn::L3Protocol object (basically, self)

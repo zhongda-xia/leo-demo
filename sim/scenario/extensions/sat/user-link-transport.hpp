@@ -29,7 +29,7 @@ using std::string;
 class UserLinkTransport : public NetDeviceTransport
 {
 public:
-  static bool m_doOverlay; // controls whether overlay mechanims are enabled
+  static bool m_doShim; // controls whether the shim layer mechanims are enabled
 
   UserLinkTransport(Ptr<Node> node, const Ptr<NetDevice>& netDevice,
                      const string& localUri,

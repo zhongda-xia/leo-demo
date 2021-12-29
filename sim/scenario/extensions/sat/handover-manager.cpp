@@ -5,7 +5,7 @@
  * Author: Zhongda Xia <xiazhongda@hit.edu.cn>
  **/
 
-#include "overlay-manager.hpp"
+#include "handover-manager.hpp"
 
 #include "core.hpp"
 #include "tlv.hpp"
@@ -20,27 +20,27 @@
 
 #include <string>
 
-NS_LOG_COMPONENT_DEFINE("ndn.sat.OverlayManager");
+NS_LOG_COMPONENT_DEFINE("ndn.sat.HandoverManager");
 
 namespace ns3 {
 namespace ndn {
 namespace sat {
 
-NS_OBJECT_ENSURE_REGISTERED(OverlayManager);
+NS_OBJECT_ENSURE_REGISTERED(HandoverManager);
 
-uint64_t OverlayManager::m_hopLimit = 2;
+uint64_t HandoverManager::m_hopLimit = 2;
 
 TypeId
-OverlayManager::GetTypeId()
+HandoverManager::GetTypeId()
 {
-  static TypeId tid = TypeId("ns3::ndn::sat::OverlayManager").SetGroupName("Sat").SetParent<Object>().AddConstructor<OverlayManager>()
+  static TypeId tid = TypeId("ns3::ndn::sat::HandoverManager").SetGroupName("Sat").SetParent<Object>().AddConstructor<HandoverManager>()
                       .AddTraceSource("ForwardPayloads", "ForwardPayloads",
-                                      MakeTraceSourceAccessor(&OverlayManager::m_forwardPayload),
-                                      "ns3::ndn::sat::OverlayManager::PayloadTraceCallback");
+                                      MakeTraceSourceAccessor(&HandoverManager::m_forwardPayload),
+                                      "ns3::ndn::sat::HandoverManager::PayloadTraceCallback");
   return tid;
 }
 
-OverlayManager::OverlayManager()
+HandoverManager::HandoverManager()
   : m_inReqs(0)
   , m_outReqs(0)
   , m_inAcks(0)
@@ -51,7 +51,7 @@ OverlayManager::OverlayManager()
 }
 
 void
-OverlayManager::NotifyNewAggregate()
+HandoverManager::NotifyNewAggregate()
 {
   if (m_ndn == 0) {
     m_ndn = GetObject<L3Protocol>();
@@ -60,13 +60,13 @@ OverlayManager::NotifyNewAggregate()
 }
 
 Ptr<L3Protocol>
-OverlayManager::GetL3Protocol() const
+HandoverManager::GetL3Protocol() const
 {
   return m_ndn;
 }
 
 void
-OverlayManager::TunnelPacket(const ::nfd::face::Transport::Packet& packet, string tunnelId)
+HandoverManager::TunnelPacket(const ::nfd::face::Transport::Packet& packet, string tunnelId)
 {
   NS_LOG_DEBUG("Tunnel packet via tunnel " << tunnelId);
   core::LinkPayload payloadPacket(tunnelId, packet.packet);
@@ -100,7 +100,7 @@ OverlayManager::TunnelPacket(const ::nfd::face::Transport::Packet& packet, strin
 }
 
 void
-OverlayManager::ProcessPacket(const ::nfd::face::Transport::Packet& packet, Ptr<NetDevice> lasthop)
+HandoverManager::ProcessPacket(const ::nfd::face::Transport::Packet& packet, Ptr<NetDevice> lasthop)
 {
   Block wire(packet.packet);
   wire.parse();
@@ -209,7 +209,7 @@ OverlayManager::ProcessPacket(const ::nfd::face::Transport::Packet& packet, Ptr<
 }
 
 void
-OverlayManager::BroadcastReq(string id, uint64_t hopLimit, Ptr<NetDevice> lasthop)
+HandoverManager::BroadcastReq(string id, uint64_t hopLimit, Ptr<NetDevice> lasthop)
 {
   if (hopLimit == 0) {
     // sender of req, set to max hop limit
@@ -241,7 +241,7 @@ OverlayManager::BroadcastReq(string id, uint64_t hopLimit, Ptr<NetDevice> lastho
 }
 
 void
-OverlayManager::AddUserLink(string id, ::nfd::FaceId faceId)
+HandoverManager::AddUserLink(string id, ::nfd::FaceId faceId)
 {
   NS_LOG_DEBUG("record user link " << id << " " << faceId);
   m_idList.push_back(id);
