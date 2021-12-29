@@ -611,6 +611,8 @@ def addGlobalRoutes(doc, routes, start):
 def genCZML(scenario, filename, gtPairs=None):
     global CZML_DIR
 
+    print('Generating CZML file...')
+
     doc = czml.CZML()
 
     start = datetime(2021, 1, 1, tzinfo=timezone.utc)
@@ -625,7 +627,6 @@ def genCZML(scenario, filename, gtPairs=None):
         for gtPair in gtPairs:
             addPairRoutes(doc, scenario.getPairRoutes()[gtPair], start, scenario.constellation.SIM_PERIOD)
 
-    print('Writing to CZML file...')
     doc.write(CZML_DIR+filename)
     print('Done!')
 
@@ -634,7 +635,7 @@ def genCZML(scenario, filename, gtPairs=None):
 
 NDNSIM_DIR = 'ndnsim_files/'
 
-def storeNodes(scenario, dir, prefix):
+def storeNodes(scenario, dir):
     print('Storing nodes...')
     content = ['Name,Type\n']
     for satName in scenario.constellation.satDict:
@@ -645,22 +646,22 @@ def storeNodes(scenario, dir, prefix):
         line = ','.join([gtName, 'Station'])
         line += '\n'
         content.append(line)
-    nodesFile = open('%s%s_nodes.csv'%(dir,prefix), 'w')
+    nodesFile = open('%snodes.csv'%(dir), 'w')
     nodesFile.writelines(content)
     nodesFile.close()
 
-def storeISLs(scenario, dir, prefix):
+def storeISLs(scenario, dir):
     print('Storing ISLs...')
     content = ['First,Second\n']
     for edge in scenario.constellation.snapshots[0].edges: # now ISLs are all persistent
         line = ','.join([edge[0], edge[1]])
         line += '\n'
         content.append(line)
-    ISLsFile = open('%s%s_ISLs.csv'%(dir,prefix), 'w')
+    ISLsFile = open('%sISLs.csv'%(dir), 'w')
     ISLsFile.writelines(content)
     ISLsFile.close()
 
-def storeAttachments(scenario, dir, prefix):
+def storeAttachments(scenario, dir):
     print('Storing attachments...')
     for gtId in scenario.attachments:
         content = ['Time,Satellite\n']
@@ -676,12 +677,12 @@ def storeAttachments(scenario, dir, prefix):
                 line += '\n'
             content.append(line)
         
-        attFile = open('%s%s_attachments_%s.csv'%(dir,prefix,gtId), 'w')
+        attFile = open('%sattachments_%s.csv'%(dir, gtId), 'w')
         attFile.writelines(content)
         attFile.close()
 
 # store GT pairs (consumer, producer) and the routes between each pair
-def storeGtPairs(scenario, dir, prefix, gtPairs):
+def storeGtPairs(scenario, dir, gtPairs):
     gtPairContent = ['Consumer,Producer\n']
     for gtPair in gtPairs:
         print('Storing pair: %s -> %s...'%gtPair)
@@ -692,20 +693,22 @@ def storeGtPairs(scenario, dir, prefix, gtPairs):
             line = ','.join([str(epoch), line])
             line += '\n'
             content.append(line)
-        routeFile = open('%s%s_routes_%s+%s.csv'%(dir, prefix, gtPair[0], gtPair[1]), 'w') # consumer comes first
+        routeFile = open('%sroutes_%s+%s.csv'%(dir, gtPair[0], gtPair[1]), 'w') # consumer comes first
         routeFile.writelines(content)
         routeFile.close()
         gtPairContent.append(','.join(gtPair)+'\n')
-    gtPairFile = open('%s%s_pairs.csv'%(dir,prefix), 'w')
+    gtPairFile = open('%spairs.csv'%(dir), 'w')
     gtPairFile.writelines(gtPairContent)
     gtPairFile.close()
 
-def genNdnSIM(scenario, prefix, gtPairs):
+def genNdnSIM(scenario, gtPairs):
     global NDNSIM_DIR
-    storeNodes(scenario, NDNSIM_DIR, prefix)
-    storeISLs(scenario, NDNSIM_DIR, prefix)
-    storeAttachments(scenario, NDNSIM_DIR, prefix)
-    storeGtPairs(scenario, NDNSIM_DIR, prefix, gtPairs)
+    print('Generating ndnSIM files...')
+    storeNodes(scenario, NDNSIM_DIR)
+    storeISLs(scenario, NDNSIM_DIR)
+    storeAttachments(scenario, NDNSIM_DIR)
+    storeGtPairs(scenario, NDNSIM_DIR, gtPairs)
+    print('Done!')
 
 # # store global routes for a GT (slows down simulation)
 # for gtId in gtRoutes:

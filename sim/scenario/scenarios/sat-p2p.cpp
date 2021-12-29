@@ -295,7 +295,8 @@ main(int argc, char* argv[])
   params.period = period;
   ndn::sat::Update(params, &satellites, &stations, &routes, &producerRoutes);
 
-  Simulator::Schedule(Seconds(stopTime*60-1), &ndn::sat::ShowShimOverhead, resPrefix+"overhead-count.txt");
+  if (doShim) // generate this trace file only if DRLS is enabled
+    Simulator::Schedule(Seconds(stopTime*60-1), &ndn::sat::ShowShimOverhead, resPrefix+"overhead-count.txt");
 
   ndn::sat::L3TrafficTracer::InstallAll(resPrefix+"l3-traffic-trace.txt");
 

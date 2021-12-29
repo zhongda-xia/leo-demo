@@ -9,8 +9,8 @@ from skyfield.api import wgs84
 
 ### create ground stations at major cities
 
-# choose several most populated cities
-# targets = ['Beijing', 'Shanghai', 'New York-Newark', 'São Paulo']
+# specify cities
+targets = ['Beijing', 'Chicago']
 
 MAX_CITIES = 10
 cityDict = {}
@@ -30,8 +30,7 @@ with open('cities.csv', encoding='utf-8') as cityCsv:
             if len(cityDict) >= len(targets):
                 break
 
-print(cityDict.keys())
-
+print('Creating ground stations...')
 gtDict = {} # ground stations indexed by name
 for city in tqdm(cityDict):
     gtId = getGtId(city)
@@ -42,6 +41,7 @@ for city in tqdm(cityDict):
 cons_starlink = Constellation(oh=550, no=24, ns=66, incl=53, el=25)
 sc_starlink = Scenario(cons_starlink, gtDict, 'orbit closest lazy')
 
-genCZML(sc_starlink, 'starlink.czml', [('city-Beijing', 'city-São Paulo')])
-
-genNdnSIM(sc_starlink, 'starlink', [('city-Beijing', 'city-São Paulo')])
+cityPair = tuple(gtDict.keys())
+print('Consumer: %s, producer: %s'%(cityPair[0], cityPair[1]))
+genCZML(sc_starlink, 'starlink.czml', [cityPair])
+genNdnSIM(sc_starlink, [cityPair])

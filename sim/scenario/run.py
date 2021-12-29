@@ -113,7 +113,7 @@ class ConsumerScenario (Processor):
         params["consumerCbrFreq"] = ["50.0", "100.0", "150.0", "200.0", "250.0", "300.0"]
 
         params["consumerCity"] = [s.replace(' ', '+') for s in ["Beijing"]]
-        params["producerCity"] = [s.replace(' ', '+') for s in ["São Paulo"]]
+        params["producerCity"] = [s.replace(' ', '+') for s in ["Chicago"]]
 
         if not self.doShim:
             params["strategy"] = ["multicast", "retx", "hint"]
@@ -139,7 +139,7 @@ try:
     # Simulation, processing, and graph building
     consumerCmdLine = r"./build/sat-p2p"
     producerCmdLine = r"./build/sat-p2p-kite"
-    dataDir = r"/home/sim/data"
+    dataDir = r"../../ndnsim_files"
 
     consumerScenario = ConsumerScenario (name="leo-consumer-strategy", cmdLine=consumerCmdLine, dataDir=dataDir)
     consumerScenario.run ()
