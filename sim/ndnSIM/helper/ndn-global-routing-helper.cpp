@@ -36,15 +36,16 @@
 #include "daemon/table/fib-nexthop.hpp"
 
 #include "ns3/object.h"
+#include "ns3/node.h"
+#include "ns3/node-container.h"
 #include "ns3/net-device.h"
+#include "ns3/channel.h"
 #include "ns3/log.h"
 #include "ns3/assert.h"
 #include "ns3/names.h"
 #include "ns3/node-list.h"
 #include "ns3/channel-list.h"
 #include "ns3/object-factory.h"
-
-// #include "ns3/csma-net-device.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
@@ -91,11 +92,6 @@ GlobalRoutingHelper::Install(Ptr<Node> node)
       NS_LOG_DEBUG("Not a NetDevice associated with an ndnSIM-specific transport instance");
       continue;
     }
-
-    // if (nd->GetObject<CsmaNetDevice>() != nullptr) {
-    //   NS_LOG_DEBUG("CSMA device, pass");
-    //   continue;
-    // }
 
     Ptr<Channel> ch = nd->GetChannel();
 
@@ -259,132 +255,7 @@ GlobalRoutingHelper::CalculateRoutes()
     Ptr<L3Protocol> L3protocol = (*node)->GetObject<L3Protocol>();
     shared_ptr<nfd::Forwarder> forwarder = L3protocol->getForwarder();
 
-    NS_LOG_DEBUG("Reachability from Node: " << source->GetObject<Node>()->GetId() << ", name: " << Names::FindName(source->GetObject<Node>()));
-    for (const auto& dist : distances) {
-      if (dist.first == source)
-        continue;
-      else {
-        // cout << "  Node " << dist.first->GetObject<Node> ()->GetId ();
-        if (std::get<0>(dist.second) == 0) {
-          // cout << " is unreachable" << endl;
-        }
-        else {
-          for (const auto& prefix : dist.first->GetLocalPrefixes()) {
-            NS_LOG_DEBUG(" prefix " << *prefix << " reachable via face " << *std::get<0>(dist.second)
-                         << " with distance " << std::get<1>(dist.second) << " with delay "
-                         << std::get<2>(dist.second));
-
-            FibHelper::AddRoute(*node, *prefix, std::get<0>(dist.second),
-                                std::get<1>(dist.second));
-          }
-        }
-      }
-    }
-  }
-}
-
-void
-GlobalRoutingHelper::CalculateRoutes(map<Ptr<Node>, boost::DistancesMap>* distancesMap)
-{
-  BOOST_ASSERT(distancesMap);
-  /**
-   * Implementation of route calculation is heavily based on Boost Graph Library
-   * See http://www.boost.org/doc/libs/1_49_0/libs/graph/doc/table_of_contents.html for more details
-   */
-
-  BOOST_CONCEPT_ASSERT((boost::VertexListGraphConcept<boost::NdnGlobalRouterGraph>));
-  BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<boost::NdnGlobalRouterGraph>));
-
-  boost::NdnGlobalRouterGraph graph;
-  // typedef graph_traits < NdnGlobalRouterGraph >::vertex_descriptor vertex_descriptor;
-
-  // For now we doing Dijkstra for every node.  Can be replaced with Bellman-Ford or Floyd-Warshall.
-  // Other algorithms should be faster, but they need additional EdgeListGraph concept provided by
-  // the graph, which
-  // is not obviously how implement in an efficient manner
-  for (NodeList::Iterator node = NodeList::Begin(); node != NodeList::End(); node++) {
-    Ptr<GlobalRouter> source = (*node)->GetObject<GlobalRouter>();
-    if (source == 0) {
-      NS_LOG_DEBUG("Node " << (*node)->GetId() << " does not export GlobalRouter interface");
-      continue;
-    }
-
-    boost::DistancesMap distances;
-
-    dijkstra_shortest_paths(graph, source,
-                            // predecessor_map (boost::ref(predecessors))
-                            // .
-                            distance_map(boost::ref(distances))
-                              .distance_inf(boost::WeightInf)
-                              .distance_zero(boost::WeightZero)
-                              .distance_compare(boost::WeightCompare())
-                              .distance_combine(boost::WeightCombine()));
-
-    (*distancesMap)[*node] = distances;
-
-    // NS_LOG_DEBUG (predecessors.size () << ", " << distances.size ());
-
-    Ptr<L3Protocol> L3protocol = (*node)->GetObject<L3Protocol>();
-    shared_ptr<nfd::Forwarder> forwarder = L3protocol->getForwarder();
-
-    NS_LOG_DEBUG("Reachability from Node: " << source->GetObject<Node>()->GetId() << ", name: " << Names::FindName(source->GetObject<Node>()));
-    for (const auto& dist : distances) {
-      if (dist.first == source)
-        continue;
-      else {
-        // cout << "  Node " << dist.first->GetObject<Node> ()->GetId ();
-        if (std::get<0>(dist.second) == 0) {
-          // cout << " is unreachable" << endl;
-        }
-        else {
-          for (const auto& prefix : dist.first->GetLocalPrefixes()) {
-            NS_LOG_DEBUG(" prefix " << *prefix << " reachable via face " << *std::get<0>(dist.second)
-                         << " with distance " << std::get<1>(dist.second) << " with delay "
-                         << std::get<2>(dist.second));
-
-            FibHelper::AddRoute(*node, *prefix, std::get<0>(dist.second),
-                                std::get<1>(dist.second));
-          }
-        }
-      }
-    }
-  }
-}
-
-void
-GlobalRoutingHelper::UpdatePrefixes(map<Ptr<Node>, boost::DistancesMap>* distancesMap)
-{
-  BOOST_ASSERT(distancesMap);
-  /**
-   * Implementation of route calculation is heavily based on Boost Graph Library
-   * See http://www.boost.org/doc/libs/1_49_0/libs/graph/doc/table_of_contents.html for more details
-   */
-
-  BOOST_CONCEPT_ASSERT((boost::VertexListGraphConcept<boost::NdnGlobalRouterGraph>));
-  BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<boost::NdnGlobalRouterGraph>));
-
-  boost::NdnGlobalRouterGraph graph;
-  // typedef graph_traits < NdnGlobalRouterGraph >::vertex_descriptor vertex_descriptor;
-
-  // For now we doing Dijkstra for every node.  Can be replaced with Bellman-Ford or Floyd-Warshall.
-  // Other algorithms should be faster, but they need additional EdgeListGraph concept provided by
-  // the graph, which
-  // is not obviously how implement in an efficient manner
-  for (NodeList::Iterator node = NodeList::Begin(); node != NodeList::End(); node++) {
-    Ptr<GlobalRouter> source = (*node)->GetObject<GlobalRouter>();
-    if (source == 0) {
-      NS_LOG_DEBUG("Node " << (*node)->GetId() << " does not export GlobalRouter interface");
-      continue;
-    }
-
-    boost::DistancesMap& distances = (*distancesMap)[*node];
-
-    // NS_LOG_DEBUG (predecessors.size () << ", " << distances.size ());
-
-    Ptr<L3Protocol> L3protocol = (*node)->GetObject<L3Protocol>();
-    shared_ptr<nfd::Forwarder> forwarder = L3protocol->getForwarder();
-
-    NS_LOG_DEBUG("Reachability from Node: " << source->GetObject<Node>()->GetId() << ", name: " << Names::FindName(source->GetObject<Node>()));
+    NS_LOG_DEBUG("Reachability from Node: " << source->GetObject<Node>()->GetId());
     for (const auto& dist : distances) {
       if (dist.first == source)
         continue;

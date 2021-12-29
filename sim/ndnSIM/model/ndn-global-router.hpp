@@ -107,12 +107,6 @@ public:
   const LocalPrefixList&
   GetLocalPrefixes() const;
 
-  void
-  ResetLocalPrefixes()
-  {
-    m_localPrefixes.clear();
-  }
-
   /**
    * @brief Clear global state
    */

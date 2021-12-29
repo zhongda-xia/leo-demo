@@ -23,16 +23,6 @@
 #include "ns3/ndnSIM/model/ndn-common.hpp"
 
 #include "ns3/ptr.h"
-#include "ns3/channel.h"
-#include "ns3/node.h"
-#include "ns3/node-container.h"
-
-#include <map>
-
-#include "boost-graph-ndn-global-routing-helper.hpp"
-
-
-using std::map;
 
 namespace ns3 {
 
@@ -109,15 +99,6 @@ public:
    */
   static void
   CalculateRoutes();
-
-  /**
-   * @brief Calculate for every node shortest path trees and install routes to all prefix origins
-   */
-  static void
-  CalculateRoutes(map<Ptr<Node>, boost::DistancesMap>* distancesMap);
-
-  static void
-  UpdatePrefixes(map<Ptr<Node>, boost::DistancesMap>* distancesMap);
 
   /**
    * @brief Calculate all possible next-hop independent alternative routes
